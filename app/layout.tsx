@@ -6,6 +6,7 @@ import { Fab } from "@/components/Fab";
 import { Sheet } from "@/components/Sheet";
 import { Toast } from "@/components/Toast";
 import "./globals.css";
+import "./ai-command.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const fraunces = Fraunces({
