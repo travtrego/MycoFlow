@@ -1,0 +1,35 @@
+.stage strong{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  white-space:nowrap;
+}
+
+.stage strong em{
+  color:var(--gold);
+  font-size:.7rem;
+  font-style:normal;
+  font-weight:700;
+  letter-spacing:.02em;
+  text-transform:none;
+}
+
+.stage-subset{
+  background:linear-gradient(160deg,rgba(189,118,66,.09),var(--panel-solid) 58%);
+  border-color:rgba(189,118,66,.17);
+}
+
+.stage-subset small:before{
+  content:"Subset · ";
+  color:var(--phase-break);
+  font-weight:700;
+}
+
+.stage-inventory{
+  background:linear-gradient(160deg,rgba(63,163,116,.12),var(--panel-solid) 58%);
+  border-color:rgba(63,163,116,.2);
+}
+
+.stage-inventory strong em{
+  color:var(--accent2);
+}
