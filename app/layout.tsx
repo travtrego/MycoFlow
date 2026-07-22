@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Fraunces } from "next/font/google";
 import { AppProvider } from "@/components/AppProvider";
 import { BottomNav } from "@/components/BottomNav";
-import { Fab } from "@/components/Fab";
 import { Sheet } from "@/components/Sheet";
 import { Toast } from "@/components/Toast";
 import "./globals.css";
@@ -34,7 +33,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AppProvider>
           <div className="app">{children}</div>
-          <Fab />
           <BottomNav />
           <Sheet />
           <Toast />
