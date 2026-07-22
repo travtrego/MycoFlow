@@ -4,7 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import * as actions from "@/lib/actions";
 import { loadState, saveState, seedState } from "@/lib/storage";
 import type { SheetConfig } from "@/lib/sheet-types";
-import type { AppState, CultureType, StorageLocation } from "@/lib/types";
+import type { AppState, BatchPhase, CultureType, StorageLocation } from "@/lib/types";
 
 interface AppContextValue {
   state: AppState;
@@ -18,7 +18,15 @@ interface AppContextValue {
   toggleCultureStorage: (id: string) => void;
   discardCulture: (id: string) => void;
   inoculateToGrain: (cultureId: string, qty: number, unit: string) => string | null;
-  addBatchDirect: (species: string, qty: number, unit: string) => string;
+  addBatchAtStage: (input: {
+    species: string;
+    qty: number;
+    unit: string;
+    phase: Exclude<BatchPhase, "done">;
+    location?: string | null;
+    freshWeight?: number;
+  }) => { id: string } | { error: string };
+  addDriedStock: (species: string, grams: number) => void;
   advanceToBreak: (batchId: string) => void;
   spawnToBulk: (batchId: string, qty: number, unit: string) => void;
   moveToFruiting: (batchId: string, slotId: string) => void;
@@ -76,11 +84,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setState(result.state);
       return result.id;
     },
-    addBatchDirect: (species, qty, unit) => {
-      const result = actions.addBatchDirect(state, species, qty, unit);
+    addBatchAtStage: (input) => {
+      const result = actions.addBatchAtStage(state, input);
+      if ("error" in result) return { error: result.error };
       setState(result.state);
-      return result.id;
+      return { id: result.id };
     },
+    addDriedStock: (species, grams) => setState((s) => actions.addDriedStock(s, species, grams)),
     advanceToBreak: (batchId) => setState((s) => actions.advanceToBreak(s, batchId)),
     spawnToBulk: (batchId, qty, unit) => setState((s) => actions.spawnToBulk(s, batchId, qty, unit)),
     moveToFruiting: (batchId, slotId) => setState((s) => actions.moveToFruiting(s, batchId, slotId)),

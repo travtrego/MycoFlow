@@ -1,6 +1,6 @@
 import { nextId, todayStr } from "./format";
 import { occupantOf, slotLabel } from "./selectors";
-import type { AppState, Batch, Culture, CultureType, StorageLocation } from "./types";
+import type { AppState, Batch, BatchPhase, Culture, CultureType, StorageLocation } from "./types";
 
 function logActivity(state: AppState, text: string, sub?: string): AppState {
   return { ...state, activity: [{ text, sub, date: todayStr() }, ...state.activity] };
@@ -81,26 +81,64 @@ export function inoculateToGrain(
   return { state: next, id };
 }
 
-export function addBatchDirect(
+const STAGE_ADD_EVENT: Record<Exclude<BatchPhase, "done">, string> = {
+  grain: "Grain inoculated",
+  break: "Break & shake",
+  bulk: "Spawned to bulk",
+  fruiting: "Moved to fruiting",
+  drying: "Flush 1 harvested",
+};
+
+export function addBatchAtStage(
   state: AppState,
-  species: string,
-  qty: number,
-  unit: string
-): { state: AppState; id: string } {
-  const { id, counters } = nextId(state.counters, "G", species);
+  input: {
+    species: string;
+    qty: number;
+    unit: string;
+    phase: Exclude<BatchPhase, "done">;
+    location?: string | null;
+    freshWeight?: number;
+  }
+): { state: AppState; id: string } | { error: string } {
+  const needsLocation = input.phase === "fruiting" || input.phase === "drying";
+  if (needsLocation) {
+    if (!input.location) return { error: "Choose a location" };
+    if (occupantOf(state, input.location)) return { error: "Slot occupied" };
+  }
+  const { id, counters } = nextId(state.counters, "G", input.species);
+  const qty = input.qty || 1;
+  const flushes =
+    input.phase === "drying"
+      ? [{ n: 1, freshWeight: input.freshWeight || 0, dryWeight: null, harvestDate: todayStr(), driedDate: null }]
+      : [];
+  const eventSub =
+    input.phase === "drying"
+      ? `${input.freshWeight || 0} g fresh · drying`
+      : needsLocation
+        ? slotLabel(input.location!)
+        : `${qty} ${input.unit}`;
   const batch: Batch = {
     id,
-    species,
-    phase: "grain",
-    qty: qty || 1,
-    qtyUnit: unit,
-    location: null,
-    flushes: [],
-    history: [{ event: "Grain inoculated", sub: `${qty || 1} ${unit}`, date: todayStr() }],
+    species: input.species,
+    phase: input.phase,
+    qty,
+    qtyUnit: input.unit,
+    location: needsLocation ? input.location! : null,
+    flushes,
+    history: [{ event: STAGE_ADD_EVENT[input.phase], sub: eventSub, date: todayStr() }],
   };
   let next: AppState = { ...state, counters, batches: [batch, ...state.batches] };
-  next = logActivity(next, `${id} grain inoculated`, `${qty || 1} ${unit}`);
+  next = logActivity(next, `${id} added`, `${STAGE_ADD_EVENT[input.phase]} · ${eventSub}`);
   return { state: next, id };
+}
+
+export function addDriedStock(state: AppState, species: string, grams: number): AppState {
+  const next: AppState = {
+    ...state,
+    inventory: { ...state.inventory, [species]: (state.inventory[species] || 0) + grams },
+    lifetimeInventory: { ...state.lifetimeInventory, [species]: (state.lifetimeInventory[species] || 0) + grams },
+  };
+  return logActivity(next, `${species} dried stock added`, `${grams} g`);
 }
 
 export function advanceToBreak(state: AppState, batchId: string): AppState {
