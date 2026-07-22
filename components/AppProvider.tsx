@@ -45,7 +45,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [sheet, setSheet] = useState<SheetConfig | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastServerState = useRef<string>(serialize(seedState));
+  const lastServerState = useRef<string>(serialize(seedState()));
   const saving = useRef(false);
 
   const toast = useCallback((msg: string) => {
