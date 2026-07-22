@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import * as actions from "@/lib/actions";
-import { loadState, saveState, seedState } from "@/lib/storage";
+import { seedState } from "@/lib/storage";
 import type { SheetConfig } from "@/lib/sheet-types";
 import type { AppState, BatchPhase, CultureType, StorageLocation } from "@/lib/types";
 
@@ -45,20 +45,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    setState(loadState());
-    setReady(true);
-  }, []);
-
-  useEffect(() => {
-    if (ready) saveState(state);
-  }, [state, ready]);
-
   const toast = useCallback((msg: string) => {
     setToastMsg(msg);
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToastMsg(null), 2200);
   }, []);
+
+  useEffect(() => {
+    fetch("/api/state")
+      .then((r) => r.json())
+      .then((s: AppState) => setState(s))
+      .catch(() => toast("Couldn't load your data — check your connection"))
+      .finally(() => setReady(true));
+  }, [toast]);
+
+  useEffect(() => {
+    if (!ready) return;
+    fetch("/api/state", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(state),
+    }).catch(() => toast("Couldn't save — check your connection"));
+  }, [state, ready, toast]);
 
   const openSheet = useCallback((config: SheetConfig) => setSheet(config), []);
   const closeSheet = useCallback(() => setSheet(null), []);

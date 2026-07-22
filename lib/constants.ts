@@ -41,5 +41,3 @@ export const PHASE_ICON: Record<BatchPhase, string> = {
   drying: "🌬️",
   done: "✅",
 };
-
-export const STORAGE_KEY = "mycoflow-state-v1";
