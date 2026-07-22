@@ -37,6 +37,7 @@ interface AppContextValue {
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
+const serialize = (value: AppState) => JSON.stringify(value);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(seedState);
@@ -44,6 +45,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [sheet, setSheet] = useState<SheetConfig | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastServerState = useRef<string>(serialize(seedState));
+  const saving = useRef(false);
 
   const toast = useCallback((msg: string) => {
     setToastMsg(msg);
@@ -51,21 +54,86 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toastTimer.current = setTimeout(() => setToastMsg(null), 2200);
   }, []);
 
-  useEffect(() => {
-    fetch("/api/state")
-      .then((r) => r.json())
-      .then((s: AppState) => setState(s))
-      .catch(() => toast("Couldn't load your data — check your connection"))
-      .finally(() => setReady(true));
+  const loadLatest = useCallback(async (showNotice = false) => {
+    const response = await fetch("/api/state", { cache: "no-store" });
+    if (!response.ok) throw new Error("load failed");
+    const latest = (await response.json()) as AppState;
+    const serialized = serialize(latest);
+    lastServerState.current = serialized;
+    setState((current) => {
+      if (serialize(current) === serialized) return current;
+      if (showNotice) toast("Dashboard refreshed with newer updates");
+      return latest;
+    });
   }, [toast]);
 
   useEffect(() => {
+    loadLatest()
+      .catch(() => toast("Couldn't load your data — check your connection"))
+      .finally(() => setReady(true));
+  }, [loadLatest, toast]);
+
+  useEffect(() => {
     if (!ready) return;
-    fetch("/api/state", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(state),
-    }).catch(() => toast("Couldn't save — check your connection"));
+
+    const refresh = () => {
+      if (document.visibilityState === "visible" && !saving.current) {
+        loadLatest(true).catch(() => undefined);
+      }
+    };
+
+    const interval = window.setInterval(refresh, 15000);
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [ready, loadLatest]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const nextSerialized = serialize(state);
+    if (nextSerialized === lastServerState.current) return;
+
+    let cancelled = false;
+    saving.current = true;
+
+    (async () => {
+      try {
+        const currentResponse = await fetch("/api/state", { cache: "no-store" });
+        if (!currentResponse.ok) throw new Error("pre-save check failed");
+        const currentServer = (await currentResponse.json()) as AppState;
+        const currentSerialized = serialize(currentServer);
+
+        if (currentSerialized !== lastServerState.current) {
+          lastServerState.current = currentSerialized;
+          if (!cancelled) {
+            setState(currentServer);
+            toast("Newer updates were found, so the stale save was blocked");
+          }
+          return;
+        }
+
+        const saveResponse = await fetch("/api/state", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: nextSerialized,
+        });
+        if (!saveResponse.ok) throw new Error("save failed");
+        lastServerState.current = nextSerialized;
+      } catch {
+        if (!cancelled) toast("Couldn't save — check your connection");
+      } finally {
+        saving.current = false;
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [state, ready, toast]);
 
   const openSheet = useCallback((config: SheetConfig) => setSheet(config), []);
