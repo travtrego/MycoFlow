@@ -9,7 +9,7 @@ export function BatchCard({ batch }: { batch: Batch }) {
   const label = phaseDisplay(batch);
   const dryYield = batch.flushes.reduce((a, f) => a + (f.dryWeight || 0), 0);
   return (
-    <Link href={`/batches/${batch.id}`} className="batch">
+    <Link href={`/batches/${batch.id}`} className={`batch phase-${batch.phase}`}>
       <div className="batch-top">
         <div className="batch-name">
           <b>{batch.id}</b>

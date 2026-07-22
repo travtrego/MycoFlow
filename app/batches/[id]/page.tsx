@@ -162,7 +162,7 @@ export default function BatchDetailPage() {
         <div className="avatar">🍄</div>
       </div>
 
-      <div className="detail-card">
+      <div className={`detail-card stage-card phase-${b.phase}`}>
         <div className="eyebrow">Current stage</div>
         <h2 style={{ margin: "8px 0 4px" }}>{label.stage}</h2>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: ".78rem" }}>Pill: {label.pill}</p>

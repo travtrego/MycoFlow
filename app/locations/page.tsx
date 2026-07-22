@@ -35,7 +35,7 @@ export default function LocationsPage() {
                   const label = phaseDisplay(occ);
                   return (
                     <div className="timeline-item" key={s.id}>
-                      <div className="timeline-dot" />
+                      <div className={`timeline-dot phase-${occ.phase}`} />
                       <div>
                         <b>
                           {s.label} · {occ.id}
