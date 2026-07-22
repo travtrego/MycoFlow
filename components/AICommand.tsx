@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useApp } from "@/components/AppProvider";
 import type { BatchPhase, CultureType, StorageLocation } from "@/lib/types";
 
-type Proposal = {
+type Action = {
   action:
     | "add_culture"
     | "add_batch"
@@ -15,8 +15,7 @@ type Proposal = {
     | "harvest"
     | "dry_weight"
     | "add_dried_stock"
-    | "retire_batch"
-    | "unknown";
+    | "retire_batch";
   summary: string;
   batchId: string | null;
   species: string | null;
@@ -27,23 +26,93 @@ type Proposal = {
   grams: number | null;
   cultureType: CultureType | null;
   storage: StorageLocation | null;
-  needsClarification: boolean;
-  clarification: string | null;
+};
+
+type CommandResult = {
+  actions?: Action[];
+  needsClarification?: boolean;
+  clarification?: string | null;
+  error?: string;
 };
 
 export function AICommand() {
   const app = useApp();
   const [message, setMessage] = useState("");
-  const [proposal, setProposal] = useState<Proposal | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<string | null>(null);
 
-  async function interpret() {
+  function executeAction(action: Action): string {
+    switch (action.action) {
+      case "add_culture": {
+        if (!action.species || !action.cultureType || !action.storage || !action.quantity) {
+          throw new Error("The culture update is missing required details");
+        }
+        const id = app.addCulture({
+          species: action.species,
+          type: action.cultureType,
+          storage: action.storage,
+          qty: action.quantity,
+        });
+        return `${id} added`;
+      }
+      case "add_batch": {
+        if (!action.species || !action.quantity || !action.unit || !action.phase) {
+          throw new Error("The batch update is missing required details");
+        }
+        const created = app.addBatchAtStage({
+          species: action.species,
+          qty: action.quantity,
+          unit: action.unit,
+          phase: action.phase,
+          location: action.location,
+          freshWeight: action.phase === "drying" ? action.grams ?? undefined : undefined,
+        });
+        if ("error" in created) throw new Error(created.error);
+        return `${created.id} added`;
+      }
+      case "advance_break":
+        if (!action.batchId) throw new Error("No batch was identified");
+        app.advanceToBreak(action.batchId);
+        return `${action.batchId} updated`;
+      case "spawn_bulk":
+        if (!action.batchId || !action.quantity || !action.unit) throw new Error("The bulk update is missing required details");
+        app.spawnToBulk(action.batchId, action.quantity, action.unit);
+        return `${action.batchId} spawned to bulk`;
+      case "move_fruiting":
+        if (!action.batchId || !action.location) throw new Error("The fruiting update is missing a batch or location");
+        app.moveToFruiting(action.batchId, action.location);
+        return `${action.batchId} moved to fruiting`;
+      case "move_location":
+        if (!action.batchId || !action.location) throw new Error("The location update is missing a batch or location");
+        app.moveLocation(action.batchId, action.location);
+        return `${action.batchId} moved`;
+      case "harvest":
+        if (!action.batchId || !action.grams) throw new Error("The harvest update is missing a batch or weight");
+        app.harvestFlush(action.batchId, action.grams);
+        return `${action.batchId} harvest logged`;
+      case "dry_weight":
+        if (!action.batchId || !action.grams) throw new Error("The dry-weight update is missing a batch or weight");
+        app.logDryWeight(action.batchId, action.grams);
+        return `${action.grams} g dried logged`;
+      case "add_dried_stock":
+        if (!action.species || !action.grams) throw new Error("The inventory update is missing a species or weight");
+        app.addDriedStock(action.species, action.grams);
+        return `${action.grams} g added to ${action.species} inventory`;
+      case "retire_batch":
+        if (!action.batchId) throw new Error("No batch was identified");
+        app.retireBatch(action.batchId);
+        return `${action.batchId} retired`;
+    }
+  }
+
+  async function submitUpdate() {
     const trimmed = message.trim();
     if (!trimmed || busy) return;
+
     setBusy(true);
     setError(null);
-    setProposal(null);
+    setResult(null);
 
     try {
       const response = await fetch("/api/ai-command", {
@@ -51,106 +120,30 @@ export function AICommand() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: trimmed, state: app.state }),
       });
-      const data = (await response.json()) as { proposal?: Proposal; error?: string };
-      if (!response.ok || !data.proposal) throw new Error(data.error || "Could not interpret that update");
-      setProposal(data.proposal);
+      const data = (await response.json()) as CommandResult;
+      if (!response.ok) throw new Error(data.error || "The update could not be processed");
+      if (data.needsClarification) throw new Error(data.clarification || "More detail is required");
+      if (!data.actions?.length) throw new Error("No database action was produced");
+
+      const completed = data.actions.map(executeAction);
+      const summary = completed.join(" · ");
+      setMessage("");
+      setResult(summary);
+      app.toast(summary);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not interpret that update");
+      setError(err instanceof Error ? err.message : "The update could not be processed");
     } finally {
       setBusy(false);
     }
-  }
-
-  function applyProposal() {
-    if (!proposal || proposal.needsClarification) return;
-
-    switch (proposal.action) {
-      case "add_culture": {
-        if (!proposal.species || !proposal.cultureType || !proposal.storage || !proposal.quantity) return;
-        const id = app.addCulture({
-          species: proposal.species,
-          type: proposal.cultureType,
-          storage: proposal.storage,
-          qty: proposal.quantity,
-        });
-        app.toast(`${id} added`);
-        break;
-      }
-      case "add_batch": {
-        if (!proposal.species || !proposal.quantity || !proposal.unit || !proposal.phase) return;
-        const result = app.addBatchAtStage({
-          species: proposal.species,
-          qty: proposal.quantity,
-          unit: proposal.unit,
-          phase: proposal.phase,
-          location: proposal.location,
-          freshWeight: proposal.phase === "drying" ? proposal.grams ?? undefined : undefined,
-        });
-        if ("error" in result) {
-          setError(result.error);
-          return;
-        }
-        app.toast(`${result.id} added`);
-        break;
-      }
-      case "advance_break":
-        if (!proposal.batchId) return;
-        app.advanceToBreak(proposal.batchId);
-        app.toast(`${proposal.batchId} updated`);
-        break;
-      case "spawn_bulk":
-        if (!proposal.batchId || !proposal.quantity || !proposal.unit) return;
-        app.spawnToBulk(proposal.batchId, proposal.quantity, proposal.unit);
-        app.toast(`${proposal.batchId} spawned to bulk`);
-        break;
-      case "move_fruiting":
-        if (!proposal.batchId || !proposal.location) return;
-        app.moveToFruiting(proposal.batchId, proposal.location);
-        app.toast(`${proposal.batchId} moved to fruiting`);
-        break;
-      case "move_location":
-        if (!proposal.batchId || !proposal.location) return;
-        app.moveLocation(proposal.batchId, proposal.location);
-        app.toast(`${proposal.batchId} moved`);
-        break;
-      case "harvest":
-        if (!proposal.batchId || !proposal.grams) return;
-        app.harvestFlush(proposal.batchId, proposal.grams);
-        app.toast(`${proposal.batchId} harvest logged`);
-        break;
-      case "dry_weight":
-        if (!proposal.batchId || !proposal.grams) return;
-        app.logDryWeight(proposal.batchId, proposal.grams);
-        app.toast(`${proposal.grams} g added to inventory`);
-        break;
-      case "add_dried_stock":
-        if (!proposal.species || !proposal.grams) return;
-        app.addDriedStock(proposal.species, proposal.grams);
-        app.toast(`${proposal.grams} g added to inventory`);
-        break;
-      case "retire_batch":
-        if (!proposal.batchId) return;
-        app.retireBatch(proposal.batchId);
-        app.toast(`${proposal.batchId} retired`);
-        break;
-      default:
-        setError("I couldn't turn that into a supported update yet.");
-        return;
-    }
-
-    setMessage("");
-    setProposal(null);
-    setError(null);
   }
 
   return (
     <div className="ai-command">
       <div className="ai-command-head">
         <div>
-          <span>AI log entry</span>
-          <b>Tell MycoFlow what happened</b>
+          <span>Quick log</span>
+          <b>Record what happened</b>
         </div>
-        <div className="ai-spark">✦</div>
       </div>
 
       <textarea
@@ -159,31 +152,19 @@ export function AICommand() {
         onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
-            void interpret();
+            void submitUpdate();
           }
         }}
-        placeholder='Try “Harvested 612 g fresh from PE batch 1.”'
+        placeholder='Example: “Inoculated four quart jars of PE today.”'
         rows={3}
       />
 
-      <button className="ai-submit" type="button" onClick={() => void interpret()} disabled={busy || !message.trim()}>
-        {busy ? "Interpreting…" : "Interpret update"}
+      <button className="ai-submit" type="button" onClick={() => void submitUpdate()} disabled={busy || !message.trim()}>
+        {busy ? "Recording…" : "Record update"}
       </button>
 
       {error ? <div className="ai-error">{error}</div> : null}
-
-      {proposal ? (
-        <div className="ai-proposal">
-          <small>{proposal.needsClarification ? "Need one detail" : "Ready to update"}</small>
-          <strong>{proposal.needsClarification ? proposal.clarification : proposal.summary}</strong>
-          {!proposal.needsClarification ? (
-            <div className="ai-actions">
-              <button type="button" className="ai-confirm" onClick={applyProposal}>Confirm</button>
-              <button type="button" className="ai-cancel" onClick={() => setProposal(null)}>Cancel</button>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+      {result ? <div className="ai-proposal"><strong>{result}</strong></div> : null}
     </div>
   );
 }
