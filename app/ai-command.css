@@ -1,0 +1,18 @@
+.ai-command{margin-top:16px;padding:18px;background:linear-gradient(155deg,rgba(63,163,116,.12),rgba(23,19,15,.96));border:1px solid rgba(63,163,116,.25);border-radius:26px;box-shadow:var(--shadow-sm),inset 0 1px 0 var(--highlight)}
+.ai-command-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:13px}
+.ai-command-head span{display:block;color:var(--accent);font-size:.68rem;font-weight:750;text-transform:uppercase;letter-spacing:.12em}
+.ai-command-head b{display:block;margin-top:3px;font-size:.95rem}
+.ai-spark{width:34px;height:34px;border-radius:12px;display:grid;place-items:center;background:rgba(63,163,116,.14);color:var(--accent2);border:1px solid rgba(63,163,116,.24)}
+.ai-command textarea{display:block;width:100%;resize:vertical;min-height:82px;border:1px solid var(--line);border-radius:17px;background:rgba(0,0,0,.2);color:var(--text);padding:13px 14px;font:inherit;font-size:.86rem;line-height:1.45;outline:none}
+.ai-command textarea::placeholder{color:var(--muted-dim)}
+.ai-command textarea:focus{border-color:rgba(63,163,116,.55);box-shadow:0 0 0 3px rgba(63,163,116,.1)}
+.ai-submit{width:100%;margin-top:10px;padding:11px 14px;border:1px solid rgba(63,163,116,.32);border-radius:15px;background:var(--accent);color:#07130d;font-weight:750}
+.ai-submit:disabled{cursor:not-allowed;opacity:.45}
+.ai-error{margin-top:10px;padding:10px 12px;border-radius:13px;background:rgba(201,112,90,.12);border:1px solid rgba(201,112,90,.25);color:#f1b6a8;font-size:.78rem}
+.ai-proposal{margin-top:12px;padding:13px;border-radius:16px;background:rgba(0,0,0,.2);border:1px solid var(--line)}
+.ai-proposal small{display:block;color:var(--gold);font-size:.65rem;text-transform:uppercase;letter-spacing:.09em;font-weight:700}
+.ai-proposal strong{display:block;margin-top:5px;font-size:.84rem;line-height:1.4}
+.ai-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:11px}
+.ai-actions button{padding:9px 12px;border-radius:12px;font-weight:700}
+.ai-confirm{border:1px solid rgba(63,163,116,.35);background:rgba(63,163,116,.2);color:var(--accent2)}
+.ai-cancel{border:1px solid var(--line);background:rgba(255,255,255,.035);color:var(--muted)}
