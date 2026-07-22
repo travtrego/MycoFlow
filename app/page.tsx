@@ -36,7 +36,7 @@ export default function DashboardPage() {
           </div>
           <div className="hero-stat">
             <b>{p.fruiting}</b>
-            <span>Fruiting units</span>
+            <span>Containers fruiting</span>
           </div>
           <div className="hero-stat">
             <b>{total} g</b>
