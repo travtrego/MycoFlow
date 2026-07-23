@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { parseMycoCommand } from "@/app/api/ai-command/route";
+import { parseMycoCommand } from "@/lib/ai-command";
 import type { AppState } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -185,9 +185,7 @@ function buildCases(): RegressionCase[] {
 }
 
 function sameValue(actual: unknown, expected: unknown) {
-  if (typeof actual === "string" && typeof expected === "string") {
-    return actual.trim().toLowerCase() === expected.trim().toLowerCase();
-  }
+  if (typeof actual === "string" && typeof expected === "string") return actual.trim().toLowerCase() === expected.trim().toLowerCase();
   return actual === expected;
 }
 
@@ -195,7 +193,6 @@ function validate(result: Awaited<ReturnType<typeof parseMycoCommand>>, expected
   const errors: string[] = [];
   if (result.needsClarification) errors.push(`unexpected clarification: ${result.clarification ?? "none"}`);
   if (result.actions.length !== expected.length) errors.push(`expected ${expected.length} actions, got ${result.actions.length}`);
-
   expected.forEach((wanted, index) => {
     const actual = result.actions[index];
     if (!actual) return;
@@ -222,39 +219,20 @@ async function runWithConcurrency<T, R>(items: T[], concurrency: number, worker:
 }
 
 export async function GET(request: Request) {
-  if (process.env.VERCEL_ENV === "production") {
-    return NextResponse.json({ error: "Regression runner is disabled in production" }, { status: 403 });
-  }
-
+  if (process.env.VERCEL_ENV === "production") return NextResponse.json({ error: "Regression runner is disabled in production" }, { status: 403 });
   const url = new URL(request.url);
   const start = Math.max(0, Number(url.searchParams.get("start") ?? 0));
   const count = Math.min(25, Math.max(1, Number(url.searchParams.get("count") ?? 10)));
   const selected = buildCases().slice(start, start + count);
-
   const outcomes = await runWithConcurrency(selected, 5, async (test) => {
     try {
       const result = await parseMycoCommand(test.prompt, fixtureState);
       const errors = validate(result, test.expected);
       return { id: test.id, category: test.category, prompt: test.prompt, passed: errors.length === 0, errors, result };
     } catch (error) {
-      return {
-        id: test.id,
-        category: test.category,
-        prompt: test.prompt,
-        passed: false,
-        errors: [error instanceof Error ? error.message : "Unknown parser error"],
-        result: null,
-      };
+      return { id: test.id, category: test.category, prompt: test.prompt, passed: false, errors: [error instanceof Error ? error.message : "Unknown parser error"], result: null };
     }
   });
-
   const failures = outcomes.filter((outcome) => !outcome.passed);
-  return NextResponse.json({
-    totalSuiteSize: 500,
-    start,
-    count: selected.length,
-    passed: outcomes.length - failures.length,
-    failed: failures.length,
-    failures,
-  });
+  return NextResponse.json({ totalSuiteSize: 500, start, count: selected.length, passed: outcomes.length - failures.length, failed: failures.length, failures });
 }
