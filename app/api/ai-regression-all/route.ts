@@ -61,3 +61,5 @@ export async function GET(request: Request) {
     batches: batches.map(({ start, count, passed, failed }) => ({ start, count, passed, failed })),
   });
 }
+
+// Deployment trigger: aggregate regression runner.
