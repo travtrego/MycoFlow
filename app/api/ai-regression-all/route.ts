@@ -42,24 +42,32 @@ export async function GET(request: Request) {
   );
 
   const failures = batches.flatMap((batch) => batch.failures);
-  const byCategory: Record<string, { passed: number; failed: number }> = {};
-  for (const batch of batches) {
-    for (const failure of batch.failures) {
-      byCategory[failure.category] ??= { passed: 0, failed: 0 };
-      byCategory[failure.category].failed += 1;
-    }
+  const failedByCategory: Record<string, number> = {};
+  for (const failure of failures) {
+    failedByCategory[failure.category] = (failedByCategory[failure.category] ?? 0) + 1;
   }
 
-  return NextResponse.json({
+  const summary = {
+    completedAt: new Date().toISOString(),
     total: batches.reduce((sum, batch) => sum + batch.count, 0),
     passed: batches.reduce((sum, batch) => sum + batch.passed, 0),
     failed: batches.reduce((sum, batch) => sum + batch.failed, 0),
-    failures,
-    failedByCategory: Object.fromEntries(
-      Object.entries(byCategory).map(([category, value]) => [category, value.failed]),
-    ),
-    batches: batches.map(({ start, count, passed, failed }) => ({ start, count, passed, failed })),
+    passRate: 0,
+    failedByCategory,
+    sampleFailures: failures.slice(0, 10).map(({ id, category, prompt, errors }) => ({
+      id,
+      category,
+      prompt,
+      errors,
+    })),
+  };
+  summary.passRate = Number(((summary.passed / summary.total) * 100).toFixed(1));
+
+  console.log("MYCOFLOW_REGRESSION_SUMMARY", JSON.stringify(summary));
+
+  return NextResponse.json(summary, {
+    headers: {
+      "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800",
+    },
   });
 }
-
-// Deployment trigger: aggregate regression runner.
