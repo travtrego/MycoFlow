@@ -5,12 +5,68 @@ import { AICommand } from "@/components/AICommand";
 import { useApp } from "@/components/AppProvider";
 import { BatchCard } from "@/components/BatchCard";
 import { dashboardPipeline, inventoryTotal, pipelineCounts } from "@/lib/selectors";
+import type { Batch } from "@/lib/types";
 
 const formatNumber = (value: number) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(value);
 
 const unitLabel = (value: number, singular: string, plural = `${singular}s`) =>
   value === 1 ? singular : plural;
+
+type GrowTask = {
+  batch: Batch;
+  icon: string;
+  title: string;
+  detail: string;
+  priority: number;
+};
+
+function taskFor(batch: Batch): GrowTask {
+  if (batch.phase === "drying") {
+    const flush = batch.flushes.at(-1);
+    return {
+      batch,
+      icon: "🌬️",
+      title: `Finish drying ${batch.id}`,
+      detail: flush ? `Flush ${flush.n} · ${formatNumber(flush.freshWeight)} g wet` : "Log the final dry weight",
+      priority: 1,
+    };
+  }
+  if (batch.phase === "fruiting") {
+    return {
+      batch,
+      icon: "🍄",
+      title: `Check ${batch.id} for harvest`,
+      detail: batch.flushes.length ? `Recovering after flush ${batch.flushes.length}` : "Check pins, surface conditions, and maturity",
+      priority: 2,
+    };
+  }
+  if (batch.phase === "bulk") {
+    return {
+      batch,
+      icon: "🪵",
+      title: `Check colonization on ${batch.id}`,
+      detail: `${formatNumber(batch.qty)} ${batch.qtyUnit} spawned to bulk`,
+      priority: 3,
+    };
+  }
+  if (batch.phase === "break") {
+    return {
+      batch,
+      icon: "🌾",
+      title: `Check recovery on ${batch.id}`,
+      detail: `${formatNumber(batch.qty)} ${batch.qtyUnit} · shaken`,
+      priority: 4,
+    };
+  }
+  return {
+    batch,
+    icon: "🌾",
+    title: `Check grain spawn ${batch.id}`,
+    detail: `${formatNumber(batch.qty)} ${batch.qtyUnit} colonizing`,
+    priority: 5,
+  };
+}
 
 export default function DashboardPage() {
   const { state, ready } = useApp();
@@ -22,6 +78,8 @@ export default function DashboardPage() {
   const total = inventoryTotal(state);
   const martha = active.filter((b) => b.location?.startsWith("martha"));
   const outside = active.filter((b) => b.location === "outside");
+  const tasks = active.map(taskFor).sort((a, b) => a.priority - b.priority).slice(0, 4);
+  const currentGrows = [...active].sort((a, b) => taskFor(a).priority - taskFor(b).priority).slice(0, 3);
 
   return (
     <>
@@ -35,10 +93,10 @@ export default function DashboardPage() {
 
       <div className="hero">
         <div className="eyebrow">Grow overview</div>
-        <h2>What&apos;s growing right now.</h2>
-        <p>Your cultures, grain spawn, active tubs, and dry stock in one place.</p>
+        <h2>What needs attention.</h2>
+        <p>Your next grow checks, active tubs, and dry stock in one place.</p>
         <div className="hero-stats">
-          <div className="hero-stat"><b>{active.length}</b><span>Active grows</span></div>
+          <div className="hero-stat"><b>{tasks.length}</b><span>Next checks</span></div>
           <div className="hero-stat"><b>{metrics.fruitingContainers}</b><span>Fruiting tubs</span></div>
           <div className="hero-stat"><b>{formatNumber(total)} g</b><span>Dry stock</span></div>
         </div>
@@ -46,7 +104,7 @@ export default function DashboardPage() {
 
       <AICommand />
 
-      <div className="section-head"><h3>Grow pipeline</h3><span>What stage everything is in</span></div>
+      <div className="section-head"><h3>Grow pipeline</h3><span>Where everything is</span></div>
       <div className="pipeline">
         <div className="stage">
           <div className="stage-icon">🧫</div>
@@ -63,15 +121,10 @@ export default function DashboardPage() {
           <strong>{formatNumber(metrics.grainUnits)} <em>{unitLabel(metrics.grainUnits, "jar/bag", "jars/bags")}</em></strong>
           <small>Grain spawn · about {formatNumber(metrics.grainQuarts)} qt total</small>
         </div>
-        <div className="stage stage-subset">
-          <div className="stage-icon">🤲</div>
-          <strong>{formatNumber(metrics.breakUnits)} <em>shaken</em></strong>
-          <small>{formatNumber(metrics.breakQuarts)} qt has had a break &amp; shake</small>
-        </div>
         <div className="stage">
           <div className="stage-icon">🪵</div>
           <strong>{formatNumber(metrics.bulkContainers)} <em>{unitLabel(metrics.bulkContainers, "tub")}</em></strong>
-          <small>Spawned to bulk · {formatNumber(metrics.bulkQuarts)} qt spawn</small>
+          <small>Bulk colonizing · {formatNumber(metrics.bulkQuarts)} qt spawn</small>
         </div>
         <div className="stage">
           <div className="stage-icon">🍄</div>
@@ -90,6 +143,22 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <div className="section-head"><h3>Today&apos;s grow checks</h3><span>Highest priority first</span></div>
+      <div className="task-list">
+        {tasks.length ? tasks.map((task) => (
+          <Link href={`/batches/${task.batch.id}`} className="task-row" key={task.batch.id}>
+            <div className="task-icon">{task.icon}</div>
+            <div className="task-copy"><b>{task.title}</b><span>{task.detail}</span></div>
+            <div className="task-arrow">›</div>
+          </Link>
+        )) : <div className="empty-note">Nothing needs checking right now.</div>}
+      </div>
+
+      <div className="section-head"><h3>Current grows</h3><Link className="link" href="/batches">Open full grow list</Link></div>
+      <div className="batches">
+        {currentGrows.length ? currentGrows.map((b) => <BatchCard key={b.id} batch={b} />) : <div className="empty-note">Nothing active yet. Use Quick Log to start a grow.</div>}
+      </div>
+
       <div className="section-head"><h3>Culture library</h3></div>
       <div className="inventory-card">
         {state.cultures.length ? state.cultures.map((c) => (
@@ -98,11 +167,6 @@ export default function DashboardPage() {
             <strong>{formatNumber(c.qty)} {c.type === "agar" ? unitLabel(c.qty, "plate") : "mL"}</strong>
           </Link>
         )) : <div className="empty-note">No cultures logged yet.</div>}
-      </div>
-
-      <div className="section-head"><h3>Active grows</h3><Link className="link" href="/batches">See all</Link></div>
-      <div className="batches">
-        {active.length ? active.slice(0, 4).map((b) => <BatchCard key={b.id} batch={b} />) : <div className="empty-note">Nothing active yet. Use Quick Log to start a grow.</div>}
       </div>
 
       <div className="section-head"><h3>Dry stock</h3><Link className="link" href="/inventory">View all</Link></div>
