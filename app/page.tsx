@@ -24,48 +24,18 @@ type GrowTask = {
 function taskFor(batch: Batch): GrowTask {
   if (batch.phase === "drying") {
     const flush = batch.flushes.at(-1);
-    return {
-      batch,
-      icon: "🌬️",
-      title: `Finish drying ${batch.id}`,
-      detail: flush ? `Flush ${flush.n} · ${formatNumber(flush.freshWeight)} g wet` : "Log the final dry weight",
-      priority: 1,
-    };
+    return { batch, icon: "🌬️", title: `Finish drying ${batch.id}`, detail: flush ? `Flush ${flush.n} · ${formatNumber(flush.freshWeight)} g wet` : "Log the final dry weight", priority: 1 };
   }
   if (batch.phase === "fruiting") {
-    return {
-      batch,
-      icon: "🍄",
-      title: `Check ${batch.id} for harvest`,
-      detail: batch.flushes.length ? `Recovering after flush ${batch.flushes.length}` : "Check pins, surface conditions, and maturity",
-      priority: 2,
-    };
+    return { batch, icon: "🍄", title: `Check ${batch.id} for harvest`, detail: batch.flushes.length ? `Recovering after flush ${batch.flushes.length}` : "Check pins, surface conditions, and maturity", priority: 2 };
   }
   if (batch.phase === "bulk") {
-    return {
-      batch,
-      icon: "🪵",
-      title: `Check colonization on ${batch.id}`,
-      detail: `${formatNumber(batch.qty)} ${batch.qtyUnit} spawned to bulk`,
-      priority: 3,
-    };
+    return { batch, icon: "🪵", title: `Check colonization on ${batch.id}`, detail: `${formatNumber(batch.qty)} ${batch.qtyUnit} spawned to bulk`, priority: 3 };
   }
   if (batch.phase === "break") {
-    return {
-      batch,
-      icon: "🌾",
-      title: `Check recovery on ${batch.id}`,
-      detail: `${formatNumber(batch.qty)} ${batch.qtyUnit} · shaken`,
-      priority: 4,
-    };
+    return { batch, icon: "🌾", title: `Check recovery on ${batch.id}`, detail: `${formatNumber(batch.qty)} ${batch.qtyUnit} · shaken`, priority: 4 };
   }
-  return {
-    batch,
-    icon: "🌾",
-    title: `Check grain spawn ${batch.id}`,
-    detail: `${formatNumber(batch.qty)} ${batch.qtyUnit} colonizing`,
-    priority: 5,
-  };
+  return { batch, icon: "🌾", title: `Check grain spawn ${batch.id}`, detail: `${formatNumber(batch.qty)} ${batch.qtyUnit} colonizing`, priority: 5 };
 }
 
 export default function DashboardPage() {
@@ -76,8 +46,19 @@ export default function DashboardPage() {
   const p = pipelineCounts(state);
   const metrics = dashboardPipeline(state);
   const total = inventoryTotal(state);
-  const martha = active.filter((b) => b.location?.startsWith("martha"));
-  const outside = active.filter((b) => b.location === "outside");
+  const bulkGrows = active.filter((b) => b.phase === "bulk");
+  const fruitingGrows = active.filter((b) => b.phase === "fruiting" || b.phase === "drying");
+  const tubGrows = [...bulkGrows, ...fruitingGrows];
+  const totalTubs = tubGrows.reduce((sum, b) => sum + b.qty, 0);
+  const marthaTubs = fruitingGrows.filter((b) => b.location?.startsWith("martha")).reduce((sum, b) => sum + b.qty, 0);
+  const outsideTubs = fruitingGrows.filter((b) => b.location === "outside").reduce((sum, b) => sum + b.qty, 0);
+  const otherTubs = Math.max(0, metrics.fruitingContainers - marthaTubs - outsideTubs);
+  const shoeboxes = tubGrows.filter((b) => /shoe\s*box/i.test(b.qtyUnit)).reduce((sum, b) => sum + b.qty, 0);
+  const monotubs = tubGrows.filter((b) => /mono|tub/i.test(b.qtyUnit) && !/shoe\s*box/i.test(b.qtyUnit)).reduce((sum, b) => sum + b.qty, 0);
+  const containerMix = [
+    shoeboxes ? `${shoeboxes} shoebox${shoeboxes === 1 ? "" : "es"}` : "",
+    monotubs ? `${monotubs} tub${monotubs === 1 ? "" : "s"}` : "",
+  ].filter(Boolean).join(" · ") || "Container type not specified";
   const tasks = active.map(taskFor).sort((a, b) => a.priority - b.priority).slice(0, 4);
   const currentGrows = [...active].sort((a, b) => taskFor(a).priority - taskFor(b).priority).slice(0, 3);
 
@@ -121,15 +102,19 @@ export default function DashboardPage() {
           <strong>{formatNumber(metrics.grainUnits)} <em>{unitLabel(metrics.grainUnits, "jar/bag", "jars/bags")}</em></strong>
           <small>Grain spawn · about {formatNumber(metrics.grainQuarts)} qt total</small>
         </div>
-        <div className="stage">
-          <div className="stage-icon">🪵</div>
-          <strong>{formatNumber(metrics.bulkContainers)} <em>{unitLabel(metrics.bulkContainers, "tub")}</em></strong>
-          <small>Bulk colonizing · {formatNumber(metrics.bulkQuarts)} qt spawn</small>
-        </div>
-        <div className="stage">
-          <div className="stage-icon">🍄</div>
-          <strong>{formatNumber(metrics.fruitingContainers)} <em>{unitLabel(metrics.fruitingContainers, "tub")}</em></strong>
-          <small>Fruiting · {martha.length} Martha / {outside.length} outside</small>
+        <div className="stage stage-tubs">
+          <div className="stage-heading">
+            <div className="stage-icon">🛁</div>
+            <div><strong>{formatNumber(totalTubs)} <em>{unitLabel(totalTubs, "tub")}</em></strong><small>{containerMix}</small></div>
+          </div>
+          <div className="tub-breakdown">
+            <div><b>{formatNumber(metrics.bulkContainers)}</b><span>Colonizing</span></div>
+            <div><b>{formatNumber(metrics.fruitingContainers)}</b><span>Fruiting</span></div>
+            <div><b>{marthaTubs}</b><span>In Martha</span></div>
+            <div><b>{outsideTubs}</b><span>Outside</span></div>
+          </div>
+          {otherTubs > 0 && <small className="tub-footnote">{otherTubs} fruiting elsewhere</small>}
+          <small className="tub-footnote">{formatNumber(metrics.bulkQuarts)} qt spawn currently in bulk</small>
         </div>
         <div className="stage">
           <div className="stage-icon">🌬️</div>
