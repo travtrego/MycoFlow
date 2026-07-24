@@ -15,20 +15,13 @@ export function slotLabel(slotId: string | null): string {
   return s ? `${s.group} · ${s.label}` : "—";
 }
 
-export interface PhaseDisplay {
-  pill: string;
-  stage: string;
-}
+export interface PhaseDisplay { pill: string; stage: string }
 
 export function phaseDisplay(b: Batch): PhaseDisplay {
   if (b.phase === "grain") return { pill: "Grain", stage: "Grain colonization" };
   if (b.phase === "break") return { pill: "Break & shake", stage: "Break & shake" };
   if (b.phase === "bulk") return { pill: "Bulk colonizing", stage: "Bulk colonizing" };
-  if (b.phase === "fruiting") {
-    return b.flushes.length
-      ? { pill: "Recovering", stage: `After Flush ${b.flushes.length}` }
-      : { pill: "Fruiting", stage: "Fruiting" };
-  }
+  if (b.phase === "fruiting") return b.flushes.length ? { pill: "Recovering", stage: `After Flush ${b.flushes.length}` } : { pill: "Fruiting", stage: "Fruiting" };
   if (b.phase === "drying") return { pill: "Drying", stage: `Flush ${b.flushes.length} drying` };
   return { pill: "Complete", stage: "Complete" };
 }
@@ -45,27 +38,14 @@ export interface PipelineCounts {
 
 export function pipelineCounts(state: AppState): PipelineCounts {
   const active = state.batches.filter((b) => b.phase !== "done");
-  const sum = (phase: Batch["phase"]) =>
-    active.filter((b) => b.phase === phase).reduce((a, b) => a + b.qty, 0);
+  const sum = (phase: Batch["phase"]) => active.filter((b) => b.phase === phase).reduce((a, b) => a + b.qty, 0);
   const agar = state.cultures.filter((c) => c.type === "agar");
   const lc = state.cultures.filter((c) => c.type === "lc");
   return {
-    agar: {
-      count: agar.reduce((a, c) => a + c.qty, 0),
-      room: agar.filter((c) => c.storage === "room").reduce((a, c) => a + c.qty, 0),
-      fridge: agar.filter((c) => c.storage === "fridge").reduce((a, c) => a + c.qty, 0),
-    },
-    lc: {
-      count: lc.reduce((a, c) => a + c.qty, 0),
-      room: lc.filter((c) => c.storage === "room").reduce((a, c) => a + c.qty, 0),
-      fridge: lc.filter((c) => c.storage === "fridge").reduce((a, c) => a + c.qty, 0),
-    },
-    grain: sum("grain"),
-    brk: sum("break"),
-    bulk: sum("bulk"),
-    fruiting: active
-      .filter((b) => b.phase === "fruiting" || b.phase === "drying")
-      .reduce((a, b) => a + b.qty, 0),
+    agar: { count: agar.reduce((a, c) => a + c.qty, 0), room: agar.filter((c) => c.storage === "room").reduce((a, c) => a + c.qty, 0), fridge: agar.filter((c) => c.storage === "fridge").reduce((a, c) => a + c.qty, 0) },
+    lc: { count: lc.reduce((a, c) => a + c.qty, 0), room: lc.filter((c) => c.storage === "room").reduce((a, c) => a + c.qty, 0), fridge: lc.filter((c) => c.storage === "fridge").reduce((a, c) => a + c.qty, 0) },
+    grain: sum("grain"), brk: sum("break"), bulk: sum("bulk"),
+    fruiting: active.filter((b) => b.phase === "fruiting" || b.phase === "drying").reduce((a, b) => a + b.qty, 0),
     drying: sum("drying"),
   };
 }
@@ -77,6 +57,8 @@ function quartsPerUnit(unit: string): number | null {
   if (/half\s*pint|1\/2\s*pint/.test(normalized)) return 0.25;
   if (/\bpint\b/.test(normalized)) return 0.5;
   if (/\bquart\b|\bqt\b/.test(normalized)) return 1;
+  // MycoFlow convention: a generic grain jar or bag is one quart unless the user says otherwise.
+  if (/\b(jar|jars|bag|bags|grain unit|grain units|unit|units)\b/.test(normalized)) return 1;
   return null;
 }
 
@@ -106,14 +88,9 @@ export function dashboardPipeline(state: AppState): DashboardPipeline {
   const bulkBatches = active.filter((b) => b.phase === "bulk");
   const fruitingBatches = active.filter((b) => b.phase === "fruiting" || b.phase === "drying");
   const dryingBatches = active.filter((b) => b.phase === "drying");
-
   return {
-    agarPlates: state.cultures
-      .filter((c) => c.type === "agar")
-      .reduce((total, culture) => total + culture.qty, 0),
-    lcMl: state.cultures
-      .filter((c) => c.type === "lc")
-      .reduce((total, culture) => total + culture.qty, 0),
+    agarPlates: state.cultures.filter((c) => c.type === "agar").reduce((total, culture) => total + culture.qty, 0),
+    lcMl: state.cultures.filter((c) => c.type === "lc").reduce((total, culture) => total + culture.qty, 0),
     grainQuarts: grainBatches.reduce((total, batch) => total + batchQuarts(batch), 0),
     grainUnits: grainBatches.reduce((total, batch) => total + batch.qty, 0),
     breakQuarts: breakBatches.reduce((total, batch) => total + batchQuarts(batch), 0),
