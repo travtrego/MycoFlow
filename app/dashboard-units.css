@@ -15,58 +15,37 @@
 }
 
 .stage-tubs{
-  min-width:238px;
-  background:linear-gradient(160deg,rgba(63,163,116,.1),rgba(205,167,89,.06) 55%,var(--panel-solid));
+  min-width:178px;
+  background:linear-gradient(160deg,rgba(63,163,116,.09),var(--panel-solid) 62%);
   border-color:rgba(63,163,116,.2);
 }
 
-.stage-heading{
-  display:flex;
-  align-items:center;
-  gap:12px;
+.stage-tubs .stage-icon{
+  margin-bottom:11px;
 }
 
-.stage-heading .stage-icon{
-  margin-bottom:0;
-  flex:0 0 auto;
-}
-
-.stage-heading small{
-  margin-top:3px;
-}
-
-.tub-breakdown{
+.tub-lines{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:6px;
-  margin-top:14px;
-}
-
-.tub-breakdown div{
-  min-width:0;
-  padding:9px 6px;
+  grid-template-columns:1fr 1fr;
+  gap:5px 8px;
+  margin:11px 0 8px;
+  padding:9px;
   border-radius:13px;
-  background:rgba(255,255,255,.04);
+  background:rgba(255,255,255,.035);
   border:1px solid var(--line-soft);
-  text-align:center;
 }
 
-.tub-breakdown b{
-  display:block;
-  font-size:.95rem;
-  font-variant-numeric:tabular-nums;
-}
-
-.tub-breakdown span{
-  display:block;
-  margin-top:3px;
+.tub-lines span{
   color:var(--muted);
-  font-size:.56rem;
-  line-height:1.15;
+  font-size:.6rem;
+  line-height:1.25;
+  white-space:nowrap;
 }
 
-.stage .tub-footnote{
-  margin-top:8px;
+.tub-lines b{
+  color:var(--text);
+  font-size:.72rem;
+  font-variant-numeric:tabular-nums;
 }
 
 .stage-inventory{
@@ -76,58 +55,4 @@
 
 .stage-inventory strong em{
   color:var(--accent2);
-}
-
-.task-list{
-  overflow:hidden;
-  background:var(--panel-solid);
-  border:1px solid var(--line);
-  border-radius:26px;
-  box-shadow:var(--shadow-sm);
-}
-
-.task-row{
-  display:grid;
-  grid-template-columns:42px 1fr auto;
-  gap:12px;
-  align-items:center;
-  padding:14px 16px;
-  color:inherit;
-  text-decoration:none;
-  border-bottom:1px solid var(--line-soft);
-  transition:background .2s,transform .2s var(--ease);
-}
-
-.task-row:last-child{border-bottom:0}
-.task-row:hover{background:rgba(255,255,255,.035)}
-.task-row:active{transform:scale(.992)}
-
-.task-icon{
-  width:42px;
-  height:42px;
-  display:grid;
-  place-items:center;
-  border-radius:14px;
-  background:linear-gradient(150deg,rgba(205,167,89,.18),rgba(63,163,116,.08));
-  border:1px solid var(--line-soft);
-}
-
-.task-copy b{
-  display:block;
-  font-size:.86rem;
-  letter-spacing:-.005em;
-}
-
-.task-copy span{
-  display:block;
-  color:var(--muted);
-  font-size:.7rem;
-  line-height:1.35;
-  margin-top:3px;
-}
-
-.task-arrow{
-  color:var(--gold);
-  font-size:1.35rem;
-  line-height:1;
 }
