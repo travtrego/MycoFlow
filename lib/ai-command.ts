@@ -81,6 +81,7 @@ export async function parseMycoCommand(message: string, state: AppState): Promis
       "Do not chat, coach, greet, explain, or suggest anything.",
       "For a single completed event, return exactly one action. Use multiple actions only when the user explicitly reports multiple distinct completed events, such as a fresh harvest and its dried weight.",
       "Do not ask for clarification about jar size, container size, or unit when the user already says jars, plates, tubs, shoeboxes, bags, or cultures. Preserve the stated generic unit exactly.",
+      "For grain spawn, a generic jar or bag defaults to one quart each unless the user gives another size. Examples: one jar = one quart, three bags = three quarts. Preserve the unit as jar, jars, bag, or bags; the app calculates the default quart volume.",
       "The phrases 'inoculated', 'knocked up', 'started grain jars', 'put SPECIES to grain', and 'SPECIES to grain in N jars' always create a new add_batch action in phase grain.",
       "Break and shake phrases always mean advance_break. Spawning or S2B phrases always mean spawn_bulk. Fruiting-condition phrases always mean move_fruiting.",
       "Use move_location only when the user names a physical location such as Martha, shelf, incubator, room, tent, or refrigerator.",
