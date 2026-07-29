@@ -1,24 +1,99 @@
 import type { Metadata } from "next";
-import { BUILD_ORDER, CLOSER, PLAN_META, PROGRAM_WIDE, SECTIONS, SOURCES, type Spec } from "@/lib/plans";
+import { APPROACHES, CLOSER, DECISION_LENS, PORTFOLIO_META, type Block, type Figure } from "@/lib/dreamer";
 
 export const metadata: Metadata = {
   title: "Future Plans — MycoFlow",
-  description: "Dreamer Systems Revision C — chamber program specification and build order.",
+  description: "Dreamer Systems concept portfolio — Integrated Cube, AX-80 Adaptive Airframe, and the 3-Chamber Platform.",
 };
 
-function SpecCard({ item }: { item: Spec }) {
+function FigureCard({ figure }: { figure: Figure }) {
   return (
-    <div className="spec">
-      <div className="spec-meta">
-        <span className={`spec-level level-${item.level.toLowerCase()}`}>{item.level}</span>
-        <span className="spec-ref">{item.ref}</span>
+    <a className="fig" href={figure.src} target="_blank" rel="noreferrer">
+      <div className="fig-shot">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={figure.src} alt={figure.caption} loading="lazy" decoding="async" />
       </div>
-      <b className="spec-title">{item.title}</b>
-      <p className="spec-body">{item.spec}</p>
-      <details className="spec-why">
-        <summary>Why</summary>
-        <p>{item.why}</p>
-      </details>
+      <div className="fig-cap">
+        <b>{figure.caption}</b>
+        <span>{figure.note}</span>
+      </div>
+    </a>
+  );
+}
+
+function BlockView({ block }: { block: Block }) {
+  if (block.kind === "facts") {
+    return (
+      <div className="blk">
+        <h4>{block.title}</h4>
+        <dl className="blk-facts">
+          {block.items.map((item) => (
+            <div key={item.k}>
+              <dt>{item.k}</dt>
+              <dd>{item.v}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    );
+  }
+
+  if (block.kind === "list") {
+    return (
+      <div className="blk">
+        <h4>{block.title}</h4>
+        <ul className="blk-list">
+          {block.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        {block.note ? <p className="blk-note">{block.note}</p> : null}
+      </div>
+    );
+  }
+
+  if (block.kind === "steps") {
+    return (
+      <div className="blk">
+        <h4>{block.title}</h4>
+        <ol className="blk-steps">
+          {block.items.map((item, i) => (
+            <li key={item.t}>
+              <span>{String(i + 1).padStart(2, "0")}</span>
+              <div>
+                <b>{item.t}</b>
+                <small>{item.d}</small>
+              </div>
+            </li>
+          ))}
+        </ol>
+      </div>
+    );
+  }
+
+  return (
+    <div className="blk">
+      <h4>{block.title}</h4>
+      <div className="blk-scroll">
+        <table className="blk-table">
+          <thead>
+            <tr>
+              {block.head.map((h) => (
+                <th key={h}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {block.rows.map((row) => (
+              <tr key={row.join("|")}>
+                {row.map((cell, i) => (
+                  <td key={i}>{cell}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -30,100 +105,90 @@ export default function PlansPage() {
         <div>
           <h2 className="page-title">Future Plans</h2>
           <div className="page-sub">
-            {PLAN_META.program} · {PLAN_META.revision}
+            {PORTFOLIO_META.program} · {PORTFOLIO_META.doc}
           </div>
         </div>
         <div className="avatar">⬡</div>
       </div>
 
       <div className="plan-hero">
-        <div className="eyebrow">Chamber program</div>
-        <h3>{PLAN_META.headline}</h3>
-        <p>{PLAN_META.deck}</p>
-        <div className="plan-stats">
-          {PLAN_META.stats.map((stat) => (
-            <div className="plan-stat" key={stat.label}>
-              <b>{stat.value}</b>
-              <span>{stat.label}</span>
-            </div>
-          ))}
+        <div className="eyebrow">Three design approaches</div>
+        <h3>{PORTFOLIO_META.headline}</h3>
+        <p>{PORTFOLIO_META.deck}</p>
+        <div className="plan-status">
+          <b>Recommended sequence</b>
+          {PORTFOLIO_META.sequence}
         </div>
-        <div className="plan-status">{PLAN_META.status}</div>
       </div>
 
       <div className="section-head">
         <h3>Source documents</h3>
-        <span>{PLAN_META.date}</span>
+        <span>{PORTFOLIO_META.date}</span>
       </div>
       <div className="detail-card plan-files">
-        <a href="/docs/dreamer-systems-revision-c.pdf" download>
-          <b>Revision C — PDF</b>
-          <span>Full disposition, print layout · 58 KB</span>
-        </a>
-        <a href="/docs/dreamer-systems-revision-c.html" download>
-          <b>Revision C — HTML</b>
-          <span>Full disposition, original web layout · 32 KB</span>
-        </a>
-      </div>
-
-      <div className="section-head">
-        <h3>Program-wide</h3>
-        <span>{PROGRAM_WIDE.length} specs</span>
-      </div>
-      <div className="spec-list">
-        {PROGRAM_WIDE.map((item) => (
-          <SpecCard item={item} key={item.ref} />
+        {PORTFOLIO_META.files.map((file) => (
+          <a href={file.href} download key={file.href}>
+            <b>{file.label}</b>
+            <span>{file.note}</span>
+          </a>
         ))}
       </div>
 
-      {SECTIONS.map((section) => (
-        <section key={section.num}>
+      {APPROACHES.map((approach) => (
+        <section key={approach.num}>
           <div className="plan-chapter">
-            <div className="plan-num">{section.num}</div>
+            <div className="plan-num">{approach.num}</div>
             <div>
-              <h3>{section.name}</h3>
-              <div className="plan-role">{section.role}</div>
-              <p>{section.intro}</p>
+              <h3>{approach.name}</h3>
+              <div className="plan-role">{approach.approach}</div>
+              <p>{approach.tagline}</p>
+              <div className="plan-tags">
+                {approach.optimizes.map((tag) => (
+                  <span key={tag}>{tag}</span>
+                ))}
+              </div>
             </div>
           </div>
-          <div className="spec-list">
-            {section.items.map((item) => (
-              <SpecCard item={item} key={item.ref} />
+
+          <div className="fig-list">
+            {approach.figures.map((figure) => (
+              <FigureCard figure={figure} key={figure.src} />
+            ))}
+          </div>
+
+          <div className="blk-list-wrap">
+            {approach.blocks.map((block) => (
+              <BlockView block={block} key={block.title} />
             ))}
           </div>
         </section>
       ))}
 
       <div className="section-head">
-        <h3>Build order</h3>
-        <span>{BUILD_ORDER.length} steps</span>
+        <h3>Decision lens</h3>
+        <span>Side by side</span>
       </div>
       <div className="detail-card">
-        <ol className="plan-seq">
-          {BUILD_ORDER.map((step, i) => (
-            <li key={step.title}>
-              <span className="plan-step">S{String(i + 1).padStart(2, "0")}</span>
-              <div>
-                <b>{step.title}</b>
-                <span>{step.detail}</span>
-                {step.gate ? <span className="plan-gate">Gate: {step.gate}</span> : null}
-              </div>
-            </li>
-          ))}
-        </ol>
-      </div>
-
-      <div className="section-head">
-        <h3>Technical basis</h3>
-        <span>Source checks</span>
-      </div>
-      <div className="detail-card">
-        {SOURCES.map((source) => (
-          <div className="plan-source" key={source.source}>
-            <b>{source.source}</b>
-            <span>{source.note}</span>
-          </div>
-        ))}
+        <div className="blk-scroll">
+          <table className="blk-table lens">
+            <thead>
+              <tr>
+                {DECISION_LENS.head.map((h, i) => (
+                  <th key={i}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {DECISION_LENS.rows.map((row) => (
+                <tr key={row[0]}>
+                  {row.map((cell, i) => (
+                    <td key={i}>{cell}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="plan-closer">
