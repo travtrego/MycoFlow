@@ -1,28 +1,25 @@
 import type { Metadata } from "next";
-import { BUILD_ORDER, CHAPTERS, CROSS_CUTTING, MATRIX, PLAN_META, SOURCES, type Eco } from "@/lib/plans";
+import { BUILD_ORDER, CLOSER, PLAN_META, PROGRAM_WIDE, SECTIONS, SOURCES, type Spec } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Future Plans — MycoFlow",
-  description: "Dreamer Systems Revision C engineering disposition and build order.",
+  description: "Dreamer Systems Revision C — chamber program specification and build order.",
 };
 
-function EcoItem({ eco }: { eco: Eco }) {
+function SpecCard({ item }: { item: Spec }) {
   return (
-    <details className={`eco eco-${eco.decision}`}>
-      <summary>
-        <div className="eco-meta">
-          <span className="eco-id">{eco.id}</span>
-          <span className="eco-sev">{eco.severity}</span>
-          <span className="eco-decision">{eco.decision === "accept" ? "Accept" : "Revert"}</span>
-        </div>
-        <b>{eco.title}</b>
-      </summary>
-      <p className="eco-finding">{eco.finding}</p>
-      <div className="eco-spec">
-        <small>Revision C specification</small>
-        <p>{eco.spec}</p>
+    <div className="spec">
+      <div className="spec-meta">
+        <span className={`spec-level level-${item.level.toLowerCase()}`}>{item.level}</span>
+        <span className="spec-ref">{item.ref}</span>
       </div>
-    </details>
+      <b className="spec-title">{item.title}</b>
+      <p className="spec-body">{item.spec}</p>
+      <details className="spec-why">
+        <summary>Why</summary>
+        <p>{item.why}</p>
+      </details>
+    </div>
   );
 }
 
@@ -40,13 +37,13 @@ export default function PlansPage() {
       </div>
 
       <div className="plan-hero">
-        <div className="eyebrow">{PLAN_META.document}</div>
+        <div className="eyebrow">Chamber program</div>
         <h3>{PLAN_META.headline}</h3>
         <p>{PLAN_META.deck}</p>
         <div className="plan-stats">
           {PLAN_META.stats.map((stat) => (
             <div className="plan-stat" key={stat.label}>
-              <b className={`tone-${stat.tone}`}>{stat.value}</b>
+              <b>{stat.value}</b>
               <span>{stat.label}</span>
             </div>
           ))}
@@ -55,60 +52,51 @@ export default function PlansPage() {
       </div>
 
       <div className="section-head">
-        <h3>Disposition rules</h3>
+        <h3>Source documents</h3>
         <span>{PLAN_META.date}</span>
       </div>
-      <div className="detail-card">
-        <p className="plan-lede">{PLAN_META.rules}</p>
+      <div className="detail-card plan-files">
+        <a href="/docs/dreamer-systems-revision-c.pdf" download>
+          <b>Revision C — PDF</b>
+          <span>Full disposition, print layout · 58 KB</span>
+        </a>
+        <a href="/docs/dreamer-systems-revision-c.html" download>
+          <b>Revision C — HTML</b>
+          <span>Full disposition, original web layout · 32 KB</span>
+        </a>
       </div>
 
       <div className="section-head">
-        <h3>Cross-cutting decisions</h3>
-        <span>4 items</span>
+        <h3>Program-wide</h3>
+        <span>{PROGRAM_WIDE.length} specs</span>
       </div>
-      <div className="eco-list">
-        {CROSS_CUTTING.map((eco) => (
-          <EcoItem eco={eco} key={eco.id} />
+      <div className="spec-list">
+        {PROGRAM_WIDE.map((item) => (
+          <SpecCard item={item} key={item.ref} />
         ))}
       </div>
 
-      {CHAPTERS.map((chapter) => (
-        <section key={chapter.num}>
+      {SECTIONS.map((section) => (
+        <section key={section.num}>
           <div className="plan-chapter">
-            <div className="plan-num">{chapter.num}</div>
+            <div className="plan-num">{section.num}</div>
             <div>
-              <h3>{chapter.name}</h3>
-              <div className="plan-role">{chapter.role}</div>
-              <p>{chapter.intro}</p>
+              <h3>{section.name}</h3>
+              <div className="plan-role">{section.role}</div>
+              <p>{section.intro}</p>
             </div>
           </div>
-          <div className="eco-list">
-            {chapter.items.map((eco) => (
-              <EcoItem eco={eco} key={eco.id} />
+          <div className="spec-list">
+            {section.items.map((item) => (
+              <SpecCard item={item} key={item.ref} />
             ))}
           </div>
         </section>
       ))}
 
       <div className="section-head">
-        <h3>Final disposition</h3>
-        <span>19 proposals</span>
-      </div>
-      <div className="detail-card">
-        {MATRIX.map((row) => (
-          <div className={`matrix-row matrix-${row.tone}`} key={row.item}>
-            <div className="matrix-head">
-              <b>{row.item}</b>
-              <span>{row.decision}</span>
-            </div>
-            <p>{row.action}</p>
-          </div>
-        ))}
-      </div>
-
-      <div className="section-head">
         <h3>Build order</h3>
-        <span>9 steps</span>
+        <span>{BUILD_ORDER.length} steps</span>
       </div>
       <div className="detail-card">
         <ol className="plan-seq">
@@ -139,9 +127,11 @@ export default function PlansPage() {
       </div>
 
       <div className="plan-closer">
-        <p>Accept what makes the prototype measurable.</p>
-        <p>Revert what only sounds more engineered.</p>
-        <p className="plan-closer-on">Build one chamber. Prove the air.</p>
+        {CLOSER.map((line, i) => (
+          <p key={line} className={i === CLOSER.length - 1 ? "plan-closer-on" : undefined}>
+            {line}
+          </p>
+        ))}
       </div>
     </>
   );

@@ -1,140 +1,127 @@
-export type Disposition = "accept" | "revert";
+export type Level = "Critical" | "Major" | "Minor";
 
-export type Eco = {
-  id: string;
-  severity: "Critical" | "Major" | "Minor" | "Correction";
-  decision: Disposition;
+export type Spec = {
+  ref: string;
+  level: Level;
   title: string;
-  finding: string;
   spec: string;
+  why: string;
 };
 
-export type PlanChapter = {
+export type PlanSection = {
   num: string;
   name: string;
   role: string;
   intro: string;
-  items: Eco[];
+  items: Spec[];
 };
 
 export const PLAN_META = {
   program: "Dreamer Systems",
-  document: "Engineering Disposition",
   revision: "Revision C",
   date: "29 July 2026",
   headline: "Keep the physics. Drop the overreach.",
   deck:
-    "Revision B contained strong engineering criticism, but it also overstated several risks and prescribed four fixes that would make the system less efficient, more complex, or no more sanitary. This disposition reviews all nineteen proposed ECOs against the source portfolio and keeps only the changes that improve the prototype.",
+    "The working specification for the Dreamer chamber program: what each system has to do, what has to be measured before it can claim to do it, and the order the hardware gets built in.",
   stats: [
-    { label: "Reviewed", value: "19", tone: "neutral" },
-    { label: "Accepted", value: "15", tone: "good" },
-    { label: "Reverted", value: "4", tone: "bad" },
-  ] as { label: string; value: string; tone: "neutral" | "good" | "bad" }[],
+    { label: "Systems", value: "3" },
+    { label: "Specs", value: "19" },
+    { label: "Build steps", value: "9" },
+  ],
   status: "Prototype revision — approved for analytical gates and one-chamber fabrication.",
-  rules:
-    "An edit is accepted when its defect is real and its final action improves testability, safety, serviceability, or energy performance. It is reverted when the diagnosis is overstated, the prescribed remedy introduces a worse failure mode, or the source package does not contain enough measured data to support the claim.",
 };
 
-export const CROSS_CUTTING: Eco[] = [
+export const PROGRAM_WIDE: Spec[] = [
   {
-    id: "ECO-001",
-    severity: "Critical",
-    decision: "accept",
-    title: "Add a real thermal design and operating envelope",
-    finding:
-      "The source concepts define humidity and airflow far more precisely than temperature control. That is acceptable for an indoor Phase 1 test, but not for a cabinet claiming year-round outdoor operation. The exact heating load cannot be declared until the enclosure, ambient range, fresh-air rate, and humidifier duty are measured.",
+    ref: "001",
+    level: "Critical",
+    title: "Thermal design and operating envelope",
     spec:
       "Publish an indoor prototype envelope first. Before outdoor testing, calculate envelope loss, ventilation load, evaporative cooling, fan heat, and substrate heat. Size any heater from that balance and heat supply air or chamber air — not the underside of the grow pan.",
+    why:
+      "The concepts define humidity and airflow far more precisely than temperature control. That is acceptable for an indoor Phase 1 test, but not for a cabinet claiming year-round outdoor operation. The exact heating load cannot be declared until the enclosure, ambient range, fresh-air rate, and humidifier duty are measured.",
   },
   {
-    id: "ECO-002",
-    severity: "Critical",
-    decision: "revert",
-    title: "Do not install a generic polypropylene “enthalpy core” in every design",
-    finding:
-      "The conflict between fresh-air exchange and climate retention is real. The proposed universal remedy is not. Ordinary corrugated polypropylene or HDPE can exchange sensible heat, but moisture recovery requires a vapor-permeable membrane. A wet, spore-laden exhaust stream also creates fouling and sanitation questions that Revision B did not resolve.",
+    ref: "002",
+    level: "Critical",
+    title: "Ventilation energy before any heat-recovery core",
     spec:
       "Quantify the ventilation energy term first. Consider a removable, washable sensible heat exchanger only for the outdoor Cube if that term dominates. Treat true energy-recovery ventilation as a later tested module, not a baseline requirement.",
+    why:
+      "The conflict between fresh-air exchange and climate retention is real, but a generic plastic core is not the fix. Ordinary corrugated polypropylene or HDPE can exchange sensible heat; moisture recovery requires a vapor-permeable membrane. A wet, spore-laden exhaust stream also creates fouling and sanitation questions.",
   },
   {
-    id: "ECO-003",
-    severity: "Major",
-    decision: "accept",
-    title: "Declare the biological design point",
-    finding:
-      "“Mushrooms” is not a specification. Temperature, fresh-air exchange, canopy clearance, and moisture behavior vary enough by species that the engineering pass criteria need a named operating profile.",
+    ref: "003",
+    level: "Major",
+    title: "Declared biological design point",
     spec:
       "Select one primary species/profile for prototype validation and one secondary tolerance profile. Put the temperature band, RH band, fresh-air target, cassette clearance, and allowable recovery time on the cover sheet.",
+    why:
+      "“Mushrooms” is not a specification. Temperature, fresh-air exchange, canopy clearance, and moisture behavior vary enough by species that the engineering pass criteria need a named operating profile.",
   },
   {
-    id: "ECO-004",
-    severity: "Major",
-    decision: "accept",
-    title: "Calibrate before using a five-point RH uniformity criterion",
-    finding:
-      "Commodity digital RH sensors can have individual errors comparable to the proposed chamber spread. Nine uncorrected sensors can manufacture a gradient or hide one.",
+    ref: "004",
+    level: "Major",
+    title: "Sensor calibration before any uniformity claim",
     spec:
       "Use a single-sensor nine-position traverse for formal mapping, or cross-calibrate all sensors in one stable reference environment and store offsets. State the sensor model, settling time, and measurement method beside every pass criterion.",
+    why:
+      "Commodity digital RH sensors can have individual errors comparable to the chamber spread being measured. Nine uncorrected sensors can manufacture a gradient or hide one.",
   },
 ];
 
-export const CHAPTERS: PlanChapter[] = [
+export const SECTIONS: PlanSection[] = [
   {
     num: "01",
     name: "Integrated Cube",
-    role: "Product vision — retained and narrowed",
+    role: "Product vision",
     intro:
-      "The Cube remains the north-star product. Revision C removes unsupported autonomy and intelligence claims while preserving the industrial design, service spine, cassette architecture, and solar-ready intent.",
+      "The north-star product. Industrial design, service spine, cassette architecture, and solar-ready intent are retained; autonomy and intelligence claims are held back until measured.",
     items: [
       {
-        id: "ECO-101",
-        severity: "Critical",
-        decision: "accept",
-        title: "Replace the single average power number with seasonal budgets",
-        finding:
-          "A 10 W heater, a 34 W average load, and operation across an extreme outdoor temperature range cannot all be accepted without an enclosure heat-loss calculation. The battery also cannot accept charge below its specified charging temperature, so cold-weather solar operation needs a protected battery compartment or a different scope.",
+        ref: "101",
+        level: "Critical",
+        title: "Seasonal energy budgets, not one average number",
         spec:
-          "Publish summer and winter load cases with stated ambient conditions, duty cycles, inverter state, battery reserve, and solar assumptions. Change the product claim to “grid-optional with measured ride-through” until winter tests prove more.",
+          "Publish summer and winter load cases with stated ambient conditions, duty cycles, inverter state, battery reserve, and solar assumptions. The product claim is “grid-optional with measured ride-through” until winter tests prove more.",
+        why:
+          "A 10 W heater, a 34 W average load, and operation across an extreme outdoor temperature range cannot all hold without an enclosure heat-loss calculation. The battery also cannot accept charge below its specified charging temperature, so cold-weather solar operation needs a protected battery compartment or a narrower scope.",
       },
       {
-        id: "ECO-102",
-        severity: "Major",
-        decision: "accept",
-        title: "Use a native DC internal bus",
-        finding:
-          "Low-power fans, sensors, valves, lighting, and small ultrasonic modules do not need an inverter running continuously. The original AC architecture wastes battery energy in conversion and standby losses.",
+        ref: "102",
+        level: "Major",
+        title: "Native DC internal bus",
         spec:
           "Use a fused 24 VDC distribution bus and local DC-DC conversion where required. Reserve the inverter for an optional service outlet or a legacy AC humidifier during Phase 1 testing.",
+        why:
+          "Low-power fans, sensors, valves, lighting, and small ultrasonic modules do not need an inverter running continuously. An AC-first architecture wastes battery energy in conversion and standby losses.",
       },
       {
-        id: "ECO-103",
-        severity: "Major",
-        decision: "accept",
-        title: "Qualify ingress protection at the assembled-system level",
-        finding:
-          "Ventilation ports do not automatically invalidate an ingress rating, but the complete cabinet must earn the rating. The current render shows air openings without enough detail to support IP55.",
+        ref: "103",
+        level: "Major",
+        title: "Ingress protection qualified at the assembled-system level",
         spec:
           "Use downward-facing baffled air ports, drained low points, suitable hydrophobic media, and sealed cable glands. Do not print IP55 on the product sheet until the complete assembly is tested; use “weather-shielded prototype” beforehand.",
+        why:
+          "Ventilation ports do not automatically invalidate an ingress rating, but the complete cabinet has to earn it. The current design shows air openings without enough detail to support IP55.",
       },
       {
-        id: "ECO-104",
-        severity: "Minor",
-        decision: "accept",
-        title: "Add per-shelf air balancing and inter-shelf drip control",
-        finding:
-          "Three stacked cassettes on one vertical path will not receive identical air by default, and upper-shelf condensate must not fall onto lower crops.",
+        ref: "104",
+        level: "Minor",
+        title: "Per-shelf air balancing and inter-shelf drip control",
         spec:
           "Give every shelf a defined plenum takeoff or balance orifice, its own drip eave and drain path, and a mapped sensor position. Validate top-to-bottom temperature and RH spread under full biological load.",
+        why:
+          "Three stacked cassettes on one vertical path will not receive identical air by default, and upper-shelf condensate must not fall onto lower crops.",
       },
       {
-        id: "ECO-105",
-        severity: "Minor",
-        decision: "accept",
-        title: "Ship data capture before predictive AI",
-        finding:
-          "Harvest prediction and contamination classification require labeled chamber-specific data that does not exist yet. Presenting them as delivered features confuses the roadmap with the prototype.",
+        ref: "105",
+        level: "Minor",
+        title: "Data capture ships before predictive AI",
         spec:
-          "Phase 1 provides environment logging, fixed-view timelapse, batch records, threshold alerts, and simple anomaly flags. Prediction models remain roadmap items until repeated labeled cycles support validation.",
+          "Phase 1 provides environment logging, fixed-view timelapse, batch records, threshold alerts, and simple anomaly flags. Prediction models stay roadmap items until repeated labeled cycles support validation.",
+        why:
+          "Harvest prediction and contamination classification require labeled chamber-specific data that does not exist yet. Presenting them as delivered features confuses the roadmap with the prototype.",
       },
     ],
   },
@@ -143,134 +130,109 @@ export const CHAPTERS: PlanChapter[] = [
     name: "AX-80 Adaptive Airframe",
     role: "Core R&D platform — build first",
     intro:
-      "The AX-80 remains the strongest engineering concept because it separates crop handling from the wet mechanical path. Revision C simplifies the airflow engine and removes two failure-prone elements.",
+      "The strongest engineering concept in the portfolio because it separates crop handling from the wet mechanical path. The airflow engine is simplified and two failure-prone elements are removed.",
     items: [
       {
-        id: "ECO-201",
-        severity: "Critical",
-        decision: "accept",
-        title: "Remove the permanently wet capillary wick from the baseline",
-        finding:
-          "A continuously wet medium in the supply path creates sanitation and maintenance burdens. The concept only needs droplet knockdown and pulse smoothing; it does not require an absorbent biological surface.",
+        ref: "201",
+        level: "Critical",
+        title: "No permanently wet capillary wick in the supply path",
         spec:
           "Start with an expansion chamber, inert impingement baffles, and a drained, removable polymer demister. Any media must be non-nutritive, bleach-compatible, tool-free, and assigned a documented cleaning or replacement interval.",
+        why:
+          "A continuously wet medium in the supply path creates sanitation and maintenance burdens. The concept only needs droplet knockdown and pulse smoothing; it does not require an absorbent biological surface.",
       },
       {
-        id: "ECO-202",
-        severity: "Major",
-        decision: "accept",
-        title: "Keep wet-path flow unidirectional",
-        finding:
-          "Reversing flow through a demister and condensate zone risks carrying collected water back toward the crop and adds a complex damper in a wet, spore-bearing duct.",
+        ref: "202",
+        level: "Major",
+        title: "Unidirectional wet-path flow",
         spec:
           "Use one unidirectional supply blower and a separate high-mounted purge exhaust fan or purge valve. The purge path must never reverse through the moisture separator.",
+        why:
+          "Reversing flow through a demister and condensate zone risks carrying collected water back toward the crop and adds a complex damper in a wet, spore-bearing duct.",
       },
       {
-        id: "ECO-203",
-        severity: "Major",
-        decision: "revert",
-        title: "Do not hold a fail-open damper closed with a continuously powered solenoid",
-        finding:
-          "The sticking risk deserves attention, but the proposed remedy consumes continuous power, generates heat, and creates another actuator dependency in an off-grid system.",
+        ref: "203",
+        level: "Major",
+        title: "Passive vents, not a powered hold-closed damper",
         spec:
           "Use permanently open filtered passive vents sized for minimum survival exchange, with the powered airflow system providing optimization rather than basic breathability. Where a flap is necessary, use a spring or weighted rigid flap with a low-adhesion seat and a documented monthly exercise test.",
+        why:
+          "Holding a fail-open damper shut with a continuously energized solenoid consumes constant power, generates heat, and creates another actuator dependency in an off-grid system.",
       },
       {
-        id: "ECO-204",
-        severity: "Minor",
-        decision: "accept",
-        title: "Turn the plenum principle into a fabrication schedule",
-        finding:
-          "The portfolio explains the taper and increasing open area but does not specify a repeatable prototype pattern.",
+        ref: "204",
+        level: "Minor",
+        title: "Plenum published as a fabrication schedule",
         spec:
           "Publish a removable diffuser schedule by zone: length, plenum depth, hole count, diameter, and open area. Begin conservatively, smoke-test, then enlarge only measured low-flow zones. Keep hole diameters large enough to resist water bridging and easy enough to clean.",
+        why:
+          "The taper and increasing open area are explained in principle but not specified as a repeatable prototype pattern.",
       },
       {
-        id: "ECO-205",
-        severity: "Minor",
-        decision: "accept",
-        title: "Specify the filter and drain trap — but do not default blindly to HEPA",
-        finding:
-          "“Filter” and “trap” are incomplete specifications. A true HEPA element may impose unnecessary pressure drop on a low-static-pressure fan, while a shallow condensate trap can become an uncontrolled air bypass.",
+        ref: "205",
+        level: "Minor",
+        title: "Filter and drain trap sized from the fan curve",
         spec:
           "Select filtration from the fan curve and measured pressure drop: washable prefilter plus a replaceable fine or hydrophobic intake element appropriate to the biological goal. Size the trap from maximum system static pressure with margin, keep it visible, and include a priming and cleaning procedure.",
+        why:
+          "“Filter” and “trap” are incomplete specifications. A true HEPA element may impose unnecessary pressure drop on a low-static-pressure fan, and a shallow condensate trap can become an uncontrolled air bypass.",
       },
     ],
   },
   {
     num: "03",
     name: "Three-Chamber Platform",
-    role: "Scale-out architecture — preserve the rack, improve control",
+    role: "Scale-out architecture",
     intro:
-      "The rack and isolation hardware remain useful. Revision C retains centralized humidification for the first prototype, adds active per-branch control, and removes unsupported battery conclusions.",
+      "The rack and isolation hardware carry forward. Humidification stays centralized for the first prototype, control authority moves local, and battery capacity is treated as unmeasured until tested.",
     items: [
       {
-        id: "ECO-301",
-        severity: "Critical",
-        decision: "revert",
-        title: "Do not automatically replace one maintained humidifier with three wet reservoirs",
-        finding:
-          "A dirty ultrasonic reservoir can aerosolize microorganisms, so the centralized source is a common-mode sanitation risk. That does not prove three separate reservoirs are safer, cheaper, or simpler. Three tanks triple cleaning points, refill points, leak points, and ultrasonic modules.",
+        ref: "301",
+        level: "Critical",
+        title: "Central humidifier retained, with explicit sanitation controls",
         spec:
-          "Retain the central humidifier for the first three-chamber test, but make sanitation explicit: closed removable reservoir, distilled or otherwise controlled water, scheduled cleaning, smooth drain-back plumbing, individual branch isolation, and no stagnant low points. Compare central versus per-chamber generation only after measured data.",
+          "Retain the central humidifier for the first three-chamber test with sanitation made explicit: closed removable reservoir, distilled or otherwise controlled water, scheduled cleaning, smooth drain-back plumbing, individual branch isolation, and no stagnant low points. Compare central versus per-chamber generation only after measured data.",
+        why:
+          "A dirty ultrasonic reservoir can aerosolize microorganisms, so a centralized source is a common-mode sanitation risk. That does not make three separate reservoirs safer, cheaper, or simpler — three tanks triple cleaning points, refill points, leak points, and ultrasonic modules.",
       },
       {
-        id: "ECO-302",
-        severity: "Major",
-        decision: "accept",
-        title: "Do not rely on one-time manual balancing of pulsed branches",
-        finding:
+        ref: "302",
+        level: "Major",
+        title: "Active branch control, not one-time manual balancing",
+        spec:
+          "Give each branch a repeatable indexed restriction and an independently controllable shutoff or valve. Use per-chamber RH data to sequence or trim branches. The central humidifier can stay shared while control authority becomes local.",
+        why:
           "Branch resistance changes with hose condition, filter loading, chamber state, and valve position. A steady-state balance session cannot guarantee equal delivery during every humidifier pulse.",
-        spec:
-          "Give each branch a repeatable indexed restriction and an independently controllable shutoff or valve. Use per-chamber RH data to sequence or trim branches. The central humidifier can remain shared while control authority becomes local.",
       },
       {
-        id: "ECO-303",
-        severity: "Major",
-        decision: "accept",
-        title: "Move closed-loop control into each chamber",
-        finding:
-          "A single controller undermines the mechanical isolation strategy and makes one electronics failure capable of disabling the full rack.",
+        ref: "303",
+        level: "Major",
+        title: "Closed-loop control inside each chamber",
         spec:
           "Use one local node and one fused branch per chamber. Each node retains safe setpoints and runs its own fan, sensing, and branch valve. A coordinator provides logging and dashboard functions only; losing it must not stop basic chamber operation.",
+        why:
+          "A single controller undermines the mechanical isolation strategy and makes one electronics failure capable of disabling the full rack.",
       },
       {
-        id: "ECO-304",
-        severity: "Major",
-        decision: "revert",
-        title: "Do not declare the battery a day short before measuring duty cycle",
-        finding:
-          "The existing documents intentionally call for watt-meter testing and report approximate runtime ranges. Without measured fan draw, humidifier power, duty cycle, inverter loss, and thermal load, the statement that the AC70P is already “well over” daily capacity is not established.",
+        ref: "304",
+        level: "Major",
+        title: "Measure duty cycle before declaring runtime",
         spec:
-          "Classify the AC70/AC70P as a prototype power source and ride-through reserve. Measure 24-hour energy use in empty and loaded tests, then publish runtime. Add winter heating only after ECO-001 establishes the thermal requirement.",
+          "Classify the AC70/AC70P as a prototype power source and ride-through reserve. Measure 24-hour energy use in empty and loaded tests, then publish runtime. Add winter heating only after the thermal requirement is established.",
+        why:
+          "Without measured fan draw, humidifier power, duty cycle, inverter loss, and thermal load, any claim about daily capacity — short or sufficient — is unsupported.",
       },
       {
-        id: "ECO-305",
-        severity: "Minor",
-        decision: "accept",
-        title: "Add an actual contaminated-batch removal procedure",
-        finding:
-          "Mechanical branch isolation does not protect nearby chambers if a contaminated tub is opened on the rack. This is primarily an operating-procedure gap.",
+        ref: "305",
+        level: "Minor",
+        title: "Contaminated-batch removal procedure",
         spec:
           "Close the branch, stop the local fan, seal the chamber or cassette before removal, move it out of the grow area, and open it only in the designated cleaning location. Service clean chambers first and suspect chambers last. Do not add rack-level negative pressure to V1 unless testing shows it is needed.",
+        why:
+          "Mechanical branch isolation does not protect nearby chambers if a contaminated tub is opened on the rack. This is primarily an operating-procedure gap.",
       },
     ],
   },
-];
-
-export const MATRIX: { item: string; decision: string; tone: Disposition; action: string }[] = [
-  { item: "ECO-001", decision: "Accept", tone: "accept", action: "Thermal balance and defined operating envelope" },
-  { item: "ECO-002", decision: "Revert", tone: "revert", action: "Quantify ventilation load; optional tested heat recovery only" },
-  { item: "ECO-003", decision: "Accept", tone: "accept", action: "Primary species/profile plus secondary tolerance profile" },
-  { item: "ECO-004", decision: "Accept", tone: "accept", action: "Calibrated sensors or single-sensor traverse" },
-  { item: "ECO-101–105", decision: "Accept all 5", tone: "accept", action: "Seasonal energy, DC bus, qualified weather rating, shelf control, honest AI roadmap" },
-  { item: "ECO-201–202", decision: "Accept", tone: "accept", action: "Inert demister and unidirectional wet path" },
-  { item: "ECO-203", decision: "Revert", tone: "revert", action: "Permanent passive vents; no continuously energized hold-closed solenoid" },
-  { item: "ECO-204–205", decision: "Accept", tone: "accept", action: "Dimensioned plenum; pressure-matched filter and trap" },
-  { item: "ECO-301", decision: "Revert", tone: "revert", action: "Retain central humidifier for prototype with explicit sanitation controls" },
-  { item: "ECO-302–303", decision: "Accept", tone: "accept", action: "Active branch control and independent local nodes" },
-  { item: "ECO-304", decision: "Revert", tone: "revert", action: "Measure duty cycle before declaring runtime failure" },
-  { item: "ECO-305", decision: "Accept", tone: "accept", action: "Sealed removal and quarantine SOP; no negative-pressure rack in V1" },
 ];
 
 export const BUILD_ORDER: { title: string; detail: string; gate?: string }[] = [
@@ -299,7 +261,7 @@ export const BUILD_ORDER: { title: string; detail: string; gate?: string }[] = [
 export const SOURCES: { source: string; note: string }[] = [
   {
     source: "Dreamer source portfolio",
-    note: "Phase 1 Build Guide, AX-80 Adaptive Airframe briefs, and the three-chamber engineering package supplied with Revision A.",
+    note: "Phase 1 Build Guide, AX-80 Adaptive Airframe briefs, and the three-chamber engineering package.",
   },
   {
     source: "BLUETTI AC70 manual and support specifications",
@@ -315,10 +277,16 @@ export const SOURCES: { source: string; note: string }[] = [
   },
   {
     source: "U.S. EPA humidifier guidance",
-    note: "Ultrasonic humidifiers can aerosolize microorganisms and minerals from standing water, supporting explicit water-system sanitation without proving that three reservoirs are superior to one.",
+    note: "Ultrasonic humidifiers can aerosolize microorganisms and minerals from standing water, supporting explicit water-system sanitation.",
   },
   {
     source: "Fan and drainage engineering guidance",
     note: "Filter selection and condensate-trap geometry must be matched to system static pressure and the actual fan curve.",
   },
+];
+
+export const CLOSER = [
+  "Accept what makes the prototype measurable.",
+  "Revert what only sounds more engineered.",
+  "Build one chamber. Prove the air.",
 ];
