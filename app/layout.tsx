@@ -7,6 +7,7 @@ import { Toast } from "@/components/Toast";
 import "./globals.css";
 import "./ai-command.css";
 import "./dashboard-units.css";
+import "./plans.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const fraunces = Fraunces({

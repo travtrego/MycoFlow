@@ -9,6 +9,7 @@ const TABS = [
   { href: "/inventory", label: "Dry Stock", icon: "▣" },
   { href: "/locations", label: "Locations", icon: "⌖" },
   { href: "/activity", label: "Log", icon: "◷" },
+  { href: "/plans", label: "Future", icon: "⬡" },
 ];
 
 export function BottomNav() {
