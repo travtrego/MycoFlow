@@ -23,6 +23,7 @@ interface AppContextValue {
   addBatchAtStage: (input: { species: string; qty: number; unit: string; phase: Exclude<BatchPhase, "done">; location?: string | null; freshWeight?: number }) => { id: string } | { error: string };
   editBatch: (batchId: string, input: { species?: string | null; qty?: number | null; unit?: string | null; phase?: Exclude<BatchPhase, "done"> | null; location?: string | null }) => void;
   addDriedStock: (species: string, grams: number) => void;
+  removeDriedStock: (species: string, grams: number) => { ok: true } | { error: string };
   advanceToBreak: (batchId: string) => void;
   spawnToBulk: (batchId: string, qty: number, unit: string) => void;
   moveToFruiting: (batchId: string, slotId: string) => void;
@@ -181,6 +182,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     editBatch: (batchId, input) => commit((s) => actions.editBatch(s, batchId, input)),
     addDriedStock: (species, grams) => commit((s) => actions.addDriedStock(s, species, grams)),
+    removeDriedStock: (species, grams) => {
+      let output: { ok: true } | { error: string } = { error: "The stock could not be removed" };
+      commit((current) => {
+        const result = actions.removeDriedStock(current, species, grams);
+        if ("error" in result) {
+          output = { error: result.error };
+          return current;
+        }
+        output = { ok: true };
+        return result;
+      });
+      return output;
+    },
     advanceToBreak: (batchId) => commit((s) => actions.advanceToBreak(s, batchId)),
     spawnToBulk: (batchId, qty, unit) => commit((s) => actions.spawnToBulk(s, batchId, qty, unit)),
     moveToFruiting: (batchId, slotId) => commit((s) => actions.moveToFruiting(s, batchId, slotId)),

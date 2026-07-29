@@ -4,7 +4,7 @@ import type { AppState } from "@/lib/types";
 const actionProperties = {
   action: {
     type: "string",
-    enum: ["add_culture", "add_batch", "edit_batch", "advance_break", "spawn_bulk", "move_fruiting", "move_location", "harvest", "dry_weight", "add_dried_stock", "retire_batch"],
+    enum: ["add_culture", "add_batch", "edit_batch", "advance_break", "spawn_bulk", "move_fruiting", "move_location", "harvest", "dry_weight", "add_dried_stock", "remove_dried_stock", "retire_batch"],
   },
   summary: { type: "string" },
   batchId: { type: ["string", "null"] },
@@ -98,7 +98,10 @@ export async function parseMycoCommand(message: string, state: AppState): Promis
       "'Moved KO-007 to the Martha.' => one move_location action on KO-007, location Martha.",
       "'Harvested first flush. 612 g fresh, dried to 59 g.' => harvest 612 g and dry_weight 59 g on the same matching batch.",
       "'Discarded PE Batch 003 trich.' => retire_batch on that exact batch.",
+      "'Sold 4 oz of Golden Teacher.' => one remove_dried_stock action, species Golden Teacher, grams 113.",
+      "'Took 20 g of PE out of stock.' => one remove_dried_stock action, species PE, grams 20.",
       "For fresh harvest weights use harvest. For dried weight tied to a batch use dry_weight. For standalone dried inventory use add_dried_stock.",
+      "When dried stock leaves inventory for any reason - sold, used, gifted, eaten, discarded, tossed - use remove_dried_stock. Convert ounces and pounds to grams (1 oz = 28.35 g, 1 lb = 453.6 g) and round to the nearest gram.",
     ].join(" "),
     input: `Current MycoFlow data:\n${JSON.stringify(stateSummary)}\n\nCultivation update:\n${message}`,
     tools: [actionTool],

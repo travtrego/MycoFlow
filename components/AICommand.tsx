@@ -16,6 +16,7 @@ type Action = {
     | "harvest"
     | "dry_weight"
     | "add_dried_stock"
+    | "remove_dried_stock"
     | "retire_batch";
   summary: string;
   batchId: string | null;
@@ -69,6 +70,7 @@ export function AICommand() {
       case "harvest": return `Record ${action.grams} g fresh from ${action.batchId}`;
       case "dry_weight": return `Record ${action.grams} g dry for ${action.batchId}`;
       case "add_dried_stock": return `Add ${action.grams} g dried ${action.species} to inventory`;
+      case "remove_dried_stock": return `Remove ${action.grams} g dried ${action.species} from stock`;
       case "retire_batch": return `Retire ${action.batchId}`;
     }
   }
@@ -133,6 +135,12 @@ export function AICommand() {
         if (!action.species || !action.grams) throw new Error("The inventory update is missing a species or weight");
         app.addDriedStock(action.species, action.grams);
         return `Added ${action.grams} g dried ${action.species} to inventory on ${dayLabel()}.`;
+      }
+      case "remove_dried_stock": {
+        if (!action.species || !action.grams) throw new Error("The inventory update is missing a species or weight");
+        const result = app.removeDriedStock(action.species, action.grams);
+        if ("error" in result) throw new Error(result.error);
+        return `Removed ${action.grams} g dried ${action.species} from stock on ${dayLabel()}.`;
       }
       case "retire_batch": {
         const batch = getBatch(action.batchId);

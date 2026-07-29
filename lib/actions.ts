@@ -86,6 +86,16 @@ export function addDriedStock(state: AppState, species: string, grams: number): 
   return logActivity(next, `${species} dried stock added`, `${grams} g`);
 }
 
+export function removeDriedStock(state: AppState, species: string, grams: number): AppState | { error: string } {
+  const onHand = state.inventory[species] || 0;
+  if (!onHand) return { error: `No ${species} in stock` };
+  if (grams > onHand) return { error: `Only ${onHand} g of ${species} in stock` };
+  const inventory = { ...state.inventory };
+  if (onHand - grams === 0) delete inventory[species];
+  else inventory[species] = onHand - grams;
+  return logActivity({ ...state, inventory }, `${species} removed from stock`, `${grams} g`);
+}
+
 export function advanceToBreak(state: AppState, batchId: string): AppState {
   const b = state.batches.find((x) => x.id === batchId); if (!b) return state;
   const next = updateBatch(state, batchId, (batch) => ({ ...batch, phase: "break", history: [...batch.history, { event: "Break & shake", sub: `${batch.qty} ${batch.qtyUnit} mixed`, date: todayStr() }] }));
